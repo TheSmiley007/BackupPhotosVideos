@@ -73,41 +73,66 @@ namespace BackupPhotosVideos
         public void Backup()
         {
             if (_photoFiles.Length == 0 && _videoFiles.Length == 0) { return; }
-            
+
             int currFile = 0;
             int numErrors = 0;
             int currPhoto = 0;
             foreach (string photo in _photoFiles)
             {
-                int startIndexFName = photo.LastIndexOf('\\') + 1;
-                string fName = photo.Substring(startIndexFName);
+                int startIndexFullName = photo.LastIndexOf('\\') + 1;
+                int startIndexExtension = photo.LastIndexOf('.') + 1;
+                string fullName = photo.Substring(startIndexFullName);
+                string extension = photo.Substring(startIndexExtension);
+                string fileName = photo.Substring(startIndexFullName, fullName.Length - extension.Length - 1);
 
                 string log;
                 bool isError = false;
+                string folderPath = PathMaker.Make(photo, FileType.Photo);
                 string destinyPath = null;
                 try
                 {
-                    string sourcePath = photo;
-                    destinyPath = PathMaker.Make(sourcePath, FileType.Photo);
-                    if (destinyPath is null)
+                    if (folderPath is null)
                     {
                         throw new Exception("Could not make the destination path!");
                     }
 
-                    destinyPath = Path.Combine(_destinationFolder, destinyPath);
+                    destinyPath = Path.Combine(_destinationFolder, folderPath);
                     if (!Directory.Exists(destinyPath))
                     {
                         Directory.CreateDirectory(destinyPath);
                     }
-                    destinyPath = Path.Combine(destinyPath, fName);
+                    destinyPath = Path.Combine(destinyPath, fullName);
 
-                    File.Copy(sourcePath, destinyPath);
-                    
-                    log = $"{fName} -> Copied successfully!\r\n";
+                    if (!File.Exists(destinyPath))
+                    {
+                        File.Copy(photo, destinyPath);
+                        log = $"{fullName} -> Copied successfully!\r\n";
+                    }
+                    else
+                    {
+                        string copyDestinyPath = Path.Combine(_destinationFolder, folderPath, "Copias");
+                        string originalPhotoCopyPath = Path.Combine(copyDestinyPath, fullName);
+
+                        if (!Directory.Exists(copyDestinyPath))
+                        {
+                            Directory.CreateDirectory(copyDestinyPath);
+                        }
+
+                        if (!File.Exists(originalPhotoCopyPath))
+                        {
+                            File.Copy(photo, originalPhotoCopyPath);
+                        }
+
+                        string newFullName = $"{fileName}_{Guid.NewGuid()}.{extension}";
+                        destinyPath = Path.Combine(copyDestinyPath, newFullName);
+                        File.Copy(photo, destinyPath);
+
+                        log = $"{fullName} -> Copied successfully to {copyDestinyPath} folder!\r\n";
+                    }
                 }
                 catch (Exception ex)
                 {
-                    log = $"[ERROR] {fName} -> {ex.Message}\r\n";
+                    log = $"[ERROR] {fullName} -> {ex.Message}\r\n";
                     numErrors++;
                     isError = true;
                 }
@@ -128,37 +153,60 @@ namespace BackupPhotosVideos
             foreach (string video in _videoFiles)
             {
 
-                int startIndexFName = video.LastIndexOf('\\') + 1;
-                string fName = video.Substring(startIndexFName);
+                int startIndexFullName = video.LastIndexOf('\\') + 1;
+                int startIndexExtension = video.LastIndexOf('.') + 1;
+                string fullName = video.Substring(startIndexFullName);
+                string extension = video.Substring(startIndexExtension);
+                string fileName = video.Substring(startIndexFullName, fullName.Length - extension.Length - 1);
 
                 string log;
                 bool isError = false;
+                string folderPath = PathMaker.Make(video, FileType.Video);
                 string destinyPath = null;
                 try
                 {
-                    string sourcePath = video;
-
-                    destinyPath = PathMaker.Make(sourcePath, FileType.Video);
-                    if (destinyPath is null)
+                    if (folderPath is null)
                     {
                         throw new Exception("Could not make the destination path!");
                     }
 
-                    destinyPath = Path.Combine(_destinationFolder, destinyPath);
+                    destinyPath = Path.Combine(_destinationFolder, folderPath);
                     if (!Directory.Exists(destinyPath))
                     {
                         Directory.CreateDirectory(destinyPath);
                     }
-                    destinyPath = Path.Combine(destinyPath, fName);
+                    destinyPath = Path.Combine(destinyPath, fullName);
 
-                    File.Copy(sourcePath, destinyPath);
-                    
+                    if (!File.Exists(destinyPath))
+                    {
+                        File.Copy(video, destinyPath);
+                        log = $"{fullName} -> Copied successfully!\r\n";
+                    }
+                    else
+                    {
+                        string copyDestinyPath = Path.Combine(_destinationFolder, folderPath, "Copias");
+                        string originalPhotoCopyPath = Path.Combine(copyDestinyPath, fullName);
 
-                    log = $"{fName} -> Copied successfully!\r\n";
+                        if (!Directory.Exists(copyDestinyPath))
+                        {
+                            Directory.CreateDirectory(copyDestinyPath);
+                        }
+
+                        if (!File.Exists(originalPhotoCopyPath))
+                        {
+                            File.Copy(video, originalPhotoCopyPath);
+                        }
+
+                        string newFullName = $"{fileName}_{Guid.NewGuid()}.{extension}";
+                        destinyPath = Path.Combine(copyDestinyPath, newFullName);
+                        File.Copy(video, destinyPath);
+
+                        log = $"{fullName} -> Copied successfully to {copyDestinyPath} folder!\r\n";
+                    }
                 }
                 catch (Exception ex)
                 {
-                    log = $"[ERROR] {fName} -> {ex.Message}\r\n";
+                    log = $"[ERROR] {fullName} -> {ex.Message}\r\n";
                     isError = true;
                     numErrors++;
                 }
@@ -179,7 +227,7 @@ namespace BackupPhotosVideos
             {
                 observer.OnCompleted();
             }
-             
+
         }
 
 
